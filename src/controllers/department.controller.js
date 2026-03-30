@@ -6,11 +6,11 @@ const createDepartment = async (req, res) => {
 
         if(!name || !code || !description)
         {
-            return res.status(404).json({message:"Not found!"});
+            return res.status(400).json({message:"All field required!"});
         }
 
         const department = await Department.create({
-            name, code ,description , is_active:false
+            name, code ,description , is_active:true 
         })
 
         res.status(200).json({message:"Department creaetd!", department});
@@ -31,12 +31,12 @@ const getAllDepartment = async (req, res) => {
         const offset = (page - 1) * limit
 
         const {count, rows} = await Department.findAndCountAll({
-            order:[["DESC"]],
+            order:[["name","ASC"]],
             limit,
             offset           
         });
 
-        return res.status(200).json({message:"List of All deparment"})
+         res.status(200).json({message:"List of All Deparment",  data: rows, total: count, page, limit})
 
     } catch (error) {
             console.log("🚀 ~ getAllDepartment ~ error:", error)
@@ -46,10 +46,10 @@ const getAllDepartment = async (req, res) => {
 }
 
   // get by id
-const getById = async (req, res) => {
+const getByIdDepartment = async (req, res) => {
     try {
         const deparmentId = req.params.u_id; 
-        const department = await findOne(deparmentId);
+        const department = await Department.findByPk(deparmentId);
 
         if(!department)
         {
@@ -65,6 +65,7 @@ const getById = async (req, res) => {
 
 
 // update
+   
 const updateDepartment = async (req, res) => {
     try {
         const deparmentId = req.params.u_id;
@@ -76,9 +77,11 @@ const updateDepartment = async (req, res) => {
              return res.status(404).json({message:"Not Found"})
         }
 
-        await Department.update({name, code ,description})
+        await department.update({name, code ,description})
+        res.status(200).json({ message: "Department updated", department })
     } catch (error) {
-        
+         res.status(500).json({message:'Server Error'})
+          console.log("🚀 ~ updateDepartment ~ error:", error)
     }
 
 }
@@ -95,14 +98,38 @@ const deleteDepartment = async (req, res) => {
         {
              return res.status(404).json({message:"Not Found"})
         }
-         if(academicYear.is_active)
+         if(department.is_active)
         {
             return res.status(400).json({message:"Cannot delete an active academic year"});
         }
 
-          await Department.update({is_active: false})
+          await department.update({is_active: false})
+          res.status(200).json({ message: "Department deleted!" })  
     } catch (error) {
-        
+          res.status(500).json({message:'Server Error'})      
+    console.log("🚀 ~ deleteDepartment ~ error:", error)
     }
 
+}
+
+const setActiveDepartment = async (req, res) => {
+    try {
+        const deparmentId = req.params.u_id 
+
+        const deparment = await Department.findByPk(deparmentId);
+
+        if(!deparment)
+        {
+            return res.status(404).json({message: "Not Found!"});
+        }
+
+        await Department.update({is_active: false}, {where: {}});
+        await deparment.update({is_active:true});
+                      res.status(200).json({message:"Department set as active successfully"})
+    } catch (error) {
+        res.status(500).json({message:'Server Error'})
+    }
+}
+module.exports = {
+    createDepartment, getAllDepartment, getByIdDepartment, updateDepartment, deleteDepartment,setActiveDepartment
 }
